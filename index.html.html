@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>期權收租系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700;900&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f4f8;
+  --s1: #ffffff;
+  --s2: #f7f9fc;
+  --b1: #e2e8f0;
+  --b2: #cbd5e1;
+  --b3: #b0bec5;
+  --t0: #1a2535;
+  --t1: #4a5e72;
+  --t2: #7a90a4;
+  --green: #0d9e73;
+  --red: #e03e4e;
+  --gold: #c47c00;
+  --blue: #1a73c8;
+  --purple: #6d4fc2;
+  --mono: 'JetBrains Mono', monospace;
+  --serif: 'Noto Serif TC', serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--t0);font-family:var(--mono);font-size:16px;min-height:100vh;overflow-x:hidden;}
+
+/* Light background subtle gradient */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 600px 400px at 10% 10%, rgba(13,158,115,0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 600px at 90% 90%, rgba(26,115,200,0.04) 0%, transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px 16px 80px;}
+
+/* Nav tabs */
+.nav{display:flex;gap:2px;background:var(--b1);border:1px solid var(--b2);padding:4px;border-radius:4px;margin-bottom:20px;flex-wrap:wrap;}
+.nav-btn{flex:1;min-width:80px;padding:9px 12px;font-family:var(--mono);font-size:0.82rem;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--t2);border-radius:2px;transition:all 0.2s;white-space:nowrap;}
+.nav-btn.active{background:var(--s1);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+.nav-btn:hover:not(.active){color:var(--t1);background:rgba(255,255,255,0.6);}
+
+/* Pages */
+.page{display:none;}
+.page.active{display:block;}
+
+/* Header */
+.hdr{padding:28px 0 24px;border-bottom:1px solid var(--b1);margin-bottom:20px;}
+.hdr-row{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+.hdr h1{font-family:var(--serif);font-size:clamp(1.4rem,3.5vw,2rem);font-weight:900;letter-spacing:0.02em;}
+.hdr h1 em{color:var(--green);font-style:normal;}
+.badge{font-size:0.80rem;letter-spacing:0.06em;text-transform:uppercase;padding:4px 10px;border-radius:2px;border:1px solid;display:inline-block;}
+.badge.green{color:var(--green);border-color:rgba(13,158,115,0.3);background:rgba(13,158,115,0.07);}
+.badge.gold{color:var(--gold);border-color:rgba(196,124,0,0.3);background:rgba(196,124,0,0.07);}
+
+/* Cards */
+.card{background:var(--s1);border:1px solid var(--b1);padding:18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+.card-title{font-size:0.85rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--t1);margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:700;}
+.card-title::before{content:'';width:3px;height:11px;background:var(--green);display:inline-block;border-radius:1px;}
+
+/* Grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--b1);}
+@media(max-width:680px){.g2,.g3{grid-template-columns:1fr;}.g4{grid-template-columns:1fr 1fr;}}
+
+/* Metric boxes */
+.mbox{background:var(--s1);padding:14px 16px;}
+.mbox .mk{font-size:0.80rem;letter-spacing:0.03em;text-transform:uppercase;color:var(--t2);margin-bottom:6px;font-weight:600;}
+.mbox .mv{font-size:1.25rem;font-weight:700;}
+.mbox .ms{font-size:0.80rem;color:var(--t2);margin-top:3px;}
+.green{color:var(--green);}
+.red{color:var(--red);}
+.gold{color:var(--gold);}
+.blue{color:var(--blue);}
+.purple{color:var(--purple);}
+
+/* Input-slider combo row */
+.input-slider-row{display:flex;align-items:center;gap:8px;}
+.input-slider-row input[type=range]{flex:1;}
+.num-input{width:72px!important;padding:6px 8px!important;font-size:0.95rem!important;text-align:center;flex-shrink:0;}
+.unit{font-size:0.88rem;color:var(--t2);white-space:nowrap;min-width:16px;}
+
+/* Input */
+.irow{margin-bottom:14px;}
+.ilabel{font-size:0.88rem;letter-spacing:0.02em;text-transform:uppercase;color:var(--t1);display:flex;justify-content:space-between;margin-bottom:7px;font-weight:600;}
+.ilabel span{color:var(--t0);font-size:0.95rem;font-weight:700;}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:var(--b1);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--green);border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+input[type=text],input[type=number],select{width:100%;background:var(--bg);border:1px solid var(--b2);color:var(--t0);font-family:var(--mono);font-size:0.95rem;padding:9px 12px;outline:none;border-radius:3px;}
+input[type=text]:focus,input[type=number]:focus,select:focus{border-color:var(--green);background:var(--s1);}
+select option{background:var(--s1);color:var(--t0);}
+
+/* Checklist */
+.ck{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--b1);font-size:0.95rem;line-height:1.6;cursor:pointer;}
+.ck:last-child{border-bottom:none;}
+.ck-box{width:20px;height:20px;border:1.5px solid var(--b2);border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all 0.2s;color:transparent;font-size:0.80rem;}
+.ck.checked .ck-box{background:var(--green);border-color:var(--green);color:white;}
+.ck-text{flex:1;}
+.ck-main{color:var(--t0);font-weight:500;}
+.ck-sub{color:var(--t2);font-size:0.82rem;margin-top:3px;}
+
+/* Signal */
+.signal{padding:18px;border:1.5px solid;margin-bottom:14px;display:flex;align-items:center;gap:16px;border-radius:4px;}
+.signal.go{border-color:rgba(13,158,115,0.4);background:rgba(13,158,115,0.07);}
+.signal.warn{border-color:rgba(196,124,0,0.4);background:rgba(196,124,0,0.07);}
+.signal.no{border-color:rgba(224,62,78,0.4);background:rgba(224,62,78,0.07);}
+.sig-icon{font-size:1.8rem;flex-shrink:0;}
+.sig-body strong{display:block;font-size:1.05rem;margin-bottom:5px;color:var(--t0);}
+.sig-body p{font-size:0.88rem;color:var(--t1);line-height:1.6;}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:0.90rem;}
+.tbl th{text-align:left;padding:10px 12px;font-size:0.78rem;letter-spacing:0.04em;text-transform:uppercase;color:var(--t1);border-bottom:2px solid var(--b2);background:var(--bg);font-weight:700;}
+.tbl td{padding:12px 12px;border-bottom:1px solid var(--b1);vertical-align:middle;color:var(--t0);}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--s2);}
+
+/* Position status */
+.status{display:inline-block;font-size:0.78rem;letter-spacing:0.04em;padding:3px 9px;border-radius:2px;}
+.status.safe{background:rgba(13,158,115,0.1);color:var(--green);border:1px solid rgba(13,158,115,0.25);}
+.status.warn{background:rgba(196,124,0,0.1);color:var(--gold);border:1px solid rgba(196,124,0,0.25);}
+.status.danger{background:rgba(224,62,78,0.1);color:var(--red);border:1px solid rgba(224,62,78,0.25);}
+
+/* Button */
+.btn{font-family:var(--mono);font-size:0.88rem;letter-spacing:0.04em;text-transform:uppercase;padding:10px 20px;cursor:pointer;border-radius:3px;border:none;transition:all 0.2s;font-weight:600;}
+.btn-green{background:rgba(13,158,115,0.12);color:var(--green);border:1.5px solid rgba(13,158,115,0.35);}
+.btn-green:hover{background:rgba(13,158,115,0.22);}
+.btn-red{background:rgba(224,62,78,0.1);color:var(--red);border:1.5px solid rgba(224,62,78,0.3);}
+.btn-red:hover{background:rgba(224,62,78,0.2);}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+
+/* Progress bar */
+.prog-wrap{background:var(--b1);height:7px;border-radius:3px;overflow:hidden;margin-top:6px;}
+.prog{height:100%;border-radius:3px;transition:width 0.5s;}
+
+/* VRP meter */
+.vrp-meter{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.vrp-bar{flex:1;background:var(--b1);height:10px;border-radius:4px;overflow:hidden;}
+.vrp-fill{height:100%;border-radius:4px;transition:width 0.5s;}
+.vrp-label{font-size:0.95rem;min-width:64px;text-align:right;font-weight:700;}
+
+/* Divider */
+hr{border:none;border-top:1px solid var(--b1);margin:16px 0;}
+
+/* Canvas */
+canvas.chart{width:100%;display:block;}
+
+/* Form row */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:500px){.form-grid{grid-template-columns:1fr;}}
+
+/* Scrollable */
+.scroll-x{overflow-x:auto;}
+
+/* Footnote */
+.fn{font-size:0.82rem;color:var(--t2);line-height:1.8;margin-top:10px;}
+
+/* Calendar */
+.month-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:0.85rem;}
+.cal-head{text-align:center;color:var(--t2);padding:4px;font-size:0.78rem;}
+.cal-day{text-align:center;padding:6px 2px;border-radius:2px;cursor:default;}
+.cal-day.today{background:rgba(13,158,115,0.12);color:var(--green);}
+.cal-day.event{background:rgba(196,124,0,0.1);color:var(--gold);}
+.cal-day.expiry{background:rgba(26,115,200,0.1);color:var(--blue);}
+.cal-day.empty{opacity:0;}
+
+/* G4 grid separator */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--b1);border:1px solid var(--b1);}
+@media(max-width:680px){.g2,.g3{grid-template-columns:1fr;}.g4{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-row">
+    <h1>期權<em>收租</em>系統</h1>
+    <span class="badge green">VRP · Theta · GEX</span>
+    <span class="badge gold">$20,000 賬戶</span>
+  </div>
+  <div style="font-size:0.90rem;color:var(--t1);">完整收租策略框架 · 入場篩選 · 持倉管理 · 風險控制 · 月度複盤</div>
+</div>
+
+<!-- Nav -->
+<div class="nav">
+  <button class="nav-btn active" onclick="switchPage('p1')">① 入場篩選</button>
+  <button class="nav-btn" onclick="switchPage('p2')">② 策略計算</button>
+  <button class="nav-btn" onclick="switchPage('p3')">③ 持倉管理</button>
+  <button class="nav-btn" onclick="switchPage('p4')">④ 風險控制</button>
+  <button class="nav-btn" onclick="switchPage('p5')">⑤ 月度SOP</button>
+  <button class="nav-btn" onclick="switchPage('p6')">⑥ 複盤記錄</button>
+</div>
+
+<!-- PAGE 1: 入場篩選 -->
+<div class="page active" id="p1">
+
+  <div id="entry-signal" class="signal go">
+    <div class="sig-icon">◈</div>
+    <div class="sig-body">
+      <strong id="sig-title">請輸入數據進行評估</strong>
+      <p id="sig-desc">填寫下方六項指標，系統自動判斷是否具備正期望值入場條件</p>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">波動率數據</div>
+
+      <div class="irow">
+        <div class="ilabel">隱含波動率 IV</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-iv" min="5" max="120" value="28" oninput="syncNum('sl-iv','ni-iv');updateEntry()">
+          <input type="number" id="ni-iv" class="num-input" min="5" max="120" value="28" oninput="syncRange('ni-iv','sl-iv');updateEntry()"><span class="unit">%</span>
+        </div>
+      </div>
+      <div class="irow">
+        <div class="ilabel">歷史波動率 HV</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-hv" min="5" max="100" value="20" oninput="syncNum('sl-hv','ni-hv');updateEntry()">
+          <input type="number" id="ni-hv" class="num-input" min="5" max="100" value="20" oninput="syncRange('ni-hv','sl-hv');updateEntry()"><span class="unit">%</span>
+        </div>
+      </div>
+      <div class="irow">
+        <div class="ilabel">IV Rank (IVR)</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-ivr" min="0" max="100" value="55" oninput="syncNum('sl-ivr','ni-ivr');updateEntry()">
+          <input type="number" id="ni-ivr" class="num-input" min="0" max="100" value="55" oninput="syncRange('ni-ivr','sl-ivr');updateEntry()"><span class="unit">%</span>
+        </div>
+      </div>
+      <div class="irow">
+        <div class="ilabel">IV百分位數</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-ivp" min="0" max="100" value="60" oninput="syncNum('sl-ivp','ni-ivp');updateEntry()">
+          <input type="number" id="ni-ivp" class="num-input" min="0" max="100" value="60" oninput="syncRange('ni-ivp','sl-ivp');updateEntry()"><span class="unit">%</span>
+        </div>
+      </div>
+
+      <hr>
+      <div style="font-size:0.90rem;color:var(--t1);margin-bottom:8px;font-weight:600;">VRP 強度</div>
+      <div class="vrp-meter">
+        <div class="vrp-bar"><div class="vrp-fill" id="vrp-fill" style="width:50%;background:var(--green)"></div></div>
+        <div class="vrp-label green" id="vrp-val">+8%</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">市場結構數據</div>
+
+      <div class="irow">
+        <div class="ilabel">GEX環境 <span id="d-gex" class="green">正GEX</span></div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-gex" min="-100" max="100" value="30" oninput="syncNum('sl-gex','ni-gex');updateEntry()">
+          <input type="number" id="ni-gex" class="num-input" min="-100" max="100" value="30" oninput="syncRange('ni-gex','sl-gex');updateEntry()">
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.90rem;color:var(--t2);margin-top:4px;"><span>負GEX</span><span>中性</span><span>正GEX</span></div>
+      </div>
+
+      <div class="irow">
+        <div class="ilabel">VIX水平</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-vix" min="10" max="80" value="20" oninput="syncNum('sl-vix','ni-vix');updateEntry()">
+          <input type="number" id="ni-vix" class="num-input" min="10" max="80" value="20" oninput="syncRange('ni-vix','sl-vix');updateEntry()">
+        </div>
+      </div>
+
+      <div class="irow">
+        <div class="ilabel">距財報天數</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-earn" min="0" max="90" value="45" oninput="syncNum('sl-earn','ni-earn');updateEntry()">
+          <input type="number" id="ni-earn" class="num-input" min="0" max="90" value="45" oninput="syncRange('ni-earn','sl-earn');updateEntry()"><span class="unit">天</span>
+        </div>
+      </div>
+
+      <div class="irow">
+        <div class="ilabel">DTE（距到期天數）</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-dte" min="7" max="90" value="35" oninput="syncNum('sl-dte','ni-dte');updateEntry()">
+          <input type="number" id="ni-dte" class="num-input" min="7" max="90" value="35" oninput="syncRange('ni-dte','sl-dte');updateEntry()"><span class="unit">天</span>
+        </div>
+      </div>
+
+      <div class="irow">
+        <div class="ilabel">Max Pain距行權價</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-mp" min="-10" max="20" value="8" oninput="syncNum('sl-mp','ni-mp');updateEntry()">
+          <input type="number" id="ni-mp" class="num-input" min="-10" max="20" value="8" oninput="syncRange('ni-mp','sl-mp');updateEntry()"><span class="unit">%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.90rem;color:var(--t2);margin-top:4px;"><span>不利</span><span>中性</span><span>有利</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score card -->
+  <div class="card">
+    <div class="card-title">入場評分卡</div>
+    <div class="g4" id="score-grid" style="margin-bottom:12px;"></div>
+    <div class="fn">* 所有必要條件（✓）才具備正期望值。加分條件提升EV強度。止損紀律是策略成立的前提，任何評分都不能替代。</div>
+  </div>
+
+</div>
+
+<!-- PAGE 2: 策略計算 -->
+<div class="page" id="p2">
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">策略參數輸入</div>
+      <div class="form-grid">
+        <div class="irow">
+          <div class="ilabel">策略類型</div>
+          <select id="strat-type" onchange="calcStrategy()">
+            <option value="sellput">Sell Put</option>
+            <option value="strangle">Short Strangle</option>
+            <option value="ironcondor">Iron Condor</option>
+            <option value="coveredcall">Covered Call</option>
+            <option value="csp">Cash Secured Put</option>
+          </select>
+        </div>
+        <div class="irow">
+          <div class="ilabel">現價 Spot</div>
+          <input type="number" id="c-spot" value="100" onchange="calcStrategy()">
+        </div>
+        <div class="irow">
+          <div class="ilabel">Put行權價</div>
+          <input type="number" id="c-kp" value="88" onchange="calcStrategy()">
+        </div>
+        <div class="irow">
+          <div class="ilabel">Call行權價</div>
+          <input type="number" id="c-kc" value="112" onchange="calcStrategy()">
+        </div>
+        <div class="irow">
+          <div class="ilabel">Put權利金</div>
+          <input type="number" id="c-pp" value="1.20" step="0.01" onchange="calcStrategy()">
+        </div>
+        <div class="irow">
+          <div class="ilabel">Call權利金</div>
+          <input type="number" id="c-cp" value="0.80" step="0.01" onchange="calcStrategy()">
+        </div>
+        <div class="irow">
+          <div class="ilabel">保護Put買入價</div>
+          <input type="number" id="c-bp" value="0.30" step="0.01" onchange="calcStrategy()">
+        </div>
+        <div class="irow">
+          <div class="ilabel">保護Call買入價</div>
+          <input type="number" id="c-bc" value="0.25" step="0.01" onchange="calcStrategy()">
+        </div>
+        <div class="irow">
+          <div class="ilabel">DTE天數</div>
+          <input type="number" id="c-dte" value="35" onchange="calcStrategy()">
+        </div>
+        <div class="irow">
+          <div class="ilabel">保證金估算</div>
+          <input type="number" id="c-margin" value="10000" onchange="calcStrategy()">
+        </div>
+      </div>
+      <button class="btn btn-green" onclick="calcStrategy()">計算</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">策略損益指標</div>
+      <div id="strat-metrics"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">到期損益圖</div>
+    <canvas class="chart" id="payoff-canvas" height="180"></canvas>
+    <div style="font-size:0.58rem;color:var(--t2);text-align:center;margin-top:6px;">綠線=利潤區 · 紅線=虧損區 · 垂直虛線=現價</div>
+  </div>
+</div>
+
+<!-- PAGE 3: 持倉管理 -->
+<div class="page" id="p3">
+  <div class="card">
+    <div class="card-title">新增持倉</div>
+    <div class="form-grid">
+      <div class="irow"><div class="ilabel">標的</div><input type="text" id="pos-ticker" placeholder="PDD" style="text-transform:uppercase"></div>
+      <div class="irow"><div class="ilabel">策略</div>
+        <select id="pos-strat">
+          <option>Sell Put</option>
+          <option>Short Strangle</option>
+          <option>Iron Condor</option>
+          <option>Covered Call</option>
+        </select>
+      </div>
+      <div class="irow"><div class="ilabel">行權價</div><input type="text" id="pos-strike" placeholder="$90 Put"></div>
+      <div class="irow"><div class="ilabel">到期日</div><input type="text" id="pos-expiry" placeholder="2026/05/22"></div>
+      <div class="irow"><div class="ilabel">收取權利金</div><input type="number" id="pos-prem" placeholder="1.20" step="0.01"></div>
+      <div class="irow"><div class="ilabel">張數</div><input type="number" id="pos-qty" value="1"></div>
+      <div class="irow"><div class="ilabel">止損價位</div><input type="number" id="pos-stop" placeholder="2.40" step="0.01"></div>
+      <div class="irow"><div class="ilabel">IVR入場</div><input type="number" id="pos-ivr" placeholder="53"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="addPosition()">新增持倉</button>
+      <button class="btn btn-red" onclick="clearPositions()">清除全部</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">當前持倉</div>
+    <div class="scroll-x">
+      <table class="tbl" id="pos-table">
+        <thead>
+          <tr>
+            <th>標的</th><th>策略</th><th>行權價</th><th>到期日</th>
+            <th>權利金</th><th>張數</th><th>止損</th><th>狀態</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="pos-tbody">
+          <tr><td colspan="9" style="text-align:center;color:var(--t2);padding:20px;">暫無持倉</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="g4">
+    <div class="mbox"><div class="mk">總持倉數</div><div class="mv" id="pm-total">0</div></div>
+    <div class="mbox"><div class="mk">總收取權利金</div><div class="mv green" id="pm-prem">$0</div></div>
+    <div class="mbox"><div class="mk">月度Theta估算</div><div class="mv gold" id="pm-theta">$0</div></div>
+    <div class="mbox"><div class="mk">最大風險敞口</div><div class="mv red" id="pm-risk">$0</div></div>
+  </div>
+</div>
+
+<!-- PAGE 4: 風險控制 -->
+<div class="page" id="p4">
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">賬戶風險參數</div>
+      <div class="irow">
+        <div class="ilabel">總資金</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-total" min="5000" max="200000" value="20000" step="1000" oninput="syncNum('sl-total','ni-total');updateRisk()">
+          <input type="number" id="ni-total" class="num-input" style="width:90px!important;" min="5000" max="200000" value="20000" step="1000" oninput="syncRange('ni-total','sl-total');updateRisk()"><span class="unit">$</span>
+        </div>
+      </div>
+      <div class="irow">
+        <div class="ilabel">當前保證金使用</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-used" min="0" max="100" value="30" oninput="syncNum('sl-used','ni-used');updateRisk()">
+          <input type="number" id="ni-used" class="num-input" min="0" max="100" value="30" oninput="syncRange('ni-used','sl-used');updateRisk()"><span class="unit">%</span>
+        </div>
+      </div>
+      <div class="irow">
+        <div class="ilabel">單筆最大風險</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-single" min="0.5" max="10" value="2" step="0.5" oninput="syncNum('sl-single','ni-single');updateRisk()">
+          <input type="number" id="ni-single" class="num-input" min="0.5" max="10" value="2" step="0.5" oninput="syncRange('ni-single','sl-single');updateRisk()"><span class="unit">%</span>
+        </div>
+      </div>
+      <div class="irow">
+        <div class="ilabel">止損觸發倍數</div>
+        <div class="input-slider-row">
+          <input type="range" id="sl-mult" min="1.5" max="4" value="2" step="0.5" oninput="syncNum('sl-mult','ni-mult');updateRisk()">
+          <input type="number" id="ni-mult" class="num-input" min="1.5" max="4" value="2" step="0.5" oninput="syncRange('ni-mult','sl-mult');updateRisk()"><span class="unit">×</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">風險儀表板</div>
+      <div id="risk-dashboard"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">三大止損規則</div>
+    <div class="ck" id="ck-r1" onclick="toggleCk(this)">
+      <div class="ck-box">✓</div>
+      <div class="ck-text">
+        <div class="ck-main">單腿虧損達權利金 <span class="red">2×</span> → 立即平倉</div>
+        <div class="ck-sub">收$1.20 → 虧損到$2.40時無條件平倉，不等待不僥倖</div>
+      </div>
+    </div>
+    <div class="ck" id="ck-r2" onclick="toggleCk(this)">
+      <div class="ck-box">✓</div>
+      <div class="ck-text">
+        <div class="ck-main">DTE剩 <span class="gold">5天</span> → 無條件平倉</div>
+        <div class="ck-sub">Gamma風險在最後5天極速放大，不值得為最後一點Theta冒險</div>
+      </div>
+    </div>
+    <div class="ck" id="ck-r3" onclick="toggleCk(this)">
+      <div class="ck-box">✓</div>
+      <div class="ck-text">
+        <div class="ck-main">保證金使用率超 <span class="red">50%</span> → 主動減倉</div>
+        <div class="ck-sub">避免Margin Call被強制平倉，永遠保留30%現金緩衝</div>
+      </div>
+    </div>
+    <div class="ck" id="ck-r4" onclick="toggleCk(this)">
+      <div class="ck-box">✓</div>
+      <div class="ck-text">
+        <div class="ck-main">VIX突破 <span class="red">35</span> → 停止新倉，評估現有持倉</div>
+        <div class="ck-sub">極端恐慌環境下IV急升，Short Vega雙腿同時虧損，優先守住本金</div>
+      </div>
+    </div>
+    <div class="ck" id="ck-r5" onclick="toggleCk(this)">
+      <div class="ck-box">✓</div>
+      <div class="ck-text">
+        <div class="ck-main">GEX從正轉負 → 警戒，考慮提前平倉</div>
+        <div class="ck-sub">現價跌破零Gamma線，做市商從壓制波動變成放大波動，策略基礎改變</div>
+      </div>
+    </div>
+    <div class="ck" id="ck-r6" onclick="toggleCk(this)">
+      <div class="ck-box">✓</div>
+      <div class="ck-text">
+        <div class="ck-main">利潤達收取額 <span class="green">50%</span> → 考慮提前平倉</div>
+        <div class="ck-sub">後半段風險回報不合算，鎖定利潤比賭到期更明智</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">黑天鵝預案</div>
+    <div style="font-size:0.90rem;line-height:2;">
+      <div style="padding:8px 0;border-bottom:1px solid var(--b1);">
+        <span class="red">▲ 跳空大跌（-10%+）</span><br>
+        <span style="color:var(--t1);">→ 不要恐慌平倉，先評估距行權價距離 → 若仍有緩衝且DTE>15天，持倉觀察 → 若接近行權價，執行止損規則</span>
+      </div>
+      <div style="padding:8px 0;border-bottom:1px solid var(--b1);">
+        <span class="gold">▲ IV急升（VIX+50%）</span><br>
+        <span style="color:var(--t1);">→ Short Vega雙腿浮虧 → 不要因為浮虧加倉攤平 → 評估Delta是否安全 → 可以買Put保護轉Iron Condor</span>
+      </div>
+      <div style="padding:8px 0;">
+        <span class="blue">▲ 被行權</span><br>
+        <span style="color:var(--t1);">→ Sell Put被行權 = 以行權價買入正股 → 事前問自己：願意持有這個股票嗎？ → 願意才做CSP，不願意就Iron Condor</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 5: 月度SOP -->
+<div class="page" id="p5">
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">月度操作流程</div>
+
+      <div style="font-size:0.90rem;line-height:1.8;">
+        <div style="padding:10px 0;border-bottom:1px solid var(--b1);">
+          <div class="gold" style="font-size:0.95rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;font-weight:700;">月初 Day 1–3</div>
+          <div style="color:var(--t0);">① Market Chameleon篩選 IVR>50 + IV>HV 標的</div>
+          <div style="color:var(--t0);">② 確認無30天內財報</div>
+          <div style="color:var(--t0);">③ 富途查正GEX環境</div>
+          <div style="color:var(--t0);">④ Maximum-Pain查Max Pain位置</div>
+          <div style="color:var(--t0);">⑤ 選DTE 35–45天到期的合約</div>
+          <div style="color:var(--t0);">⑥ 行權價選-16Δ到-20Δ（OTM）</div>
+          <div style="color:var(--t0);">⑦ 確認在Max Pain外側</div>
+          <div style="color:var(--t0);">⑧ 下限價單，中間價成交</div>
+        </div>
+        <div style="padding:10px 0;border-bottom:1px solid var(--b1);">
+          <div class="blue" style="font-size:0.95rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;font-weight:700;">持倉期 每天1分鐘</div>
+          <div style="color:var(--t0);">① 查現價距行權價距離</div>
+          <div style="color:var(--t0);">② 確認GEX環境未轉負</div>
+          <div style="color:var(--t0);">③ 查浮盈是否達50%</div>
+          <div style="color:var(--t0);">④ 確認未觸發止損條件</div>
+        </div>
+        <div style="padding:10px 0;border-bottom:1px solid var(--b1);">
+          <div class="green" style="font-size:0.95rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;font-weight:700;">平倉條件（任一觸發）</div>
+          <div style="color:var(--t0);">① 浮盈達50% → 止盈平倉</div>
+          <div style="color:var(--t0);">② 虧損達200% → 止損平倉</div>
+          <div style="color:var(--t0);">③ DTE剩5天 → 無條件平倉</div>
+          <div style="color:var(--t0);">④ GEX轉負且標的接近行權價</div>
+        </div>
+        <div style="padding:10px 0;">
+          <div class="purple" style="font-size:0.95rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;font-weight:700;">月底 複盤</div>
+          <div style="color:var(--t0);">① 記錄每筆交易結果</div>
+          <div style="color:var(--t0);">② 計算月度收益率</div>
+          <div style="color:var(--t0);">③ 分析止損觸發原因</div>
+          <div style="color:var(--t0);">④ 調整下月策略參數</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">月度目標設定</div>
+      <div class="irow">
+        <div class="ilabel">總資金</div>
+        <input type="number" id="goal-capital" value="20000" onchange="updateGoals()">
+      </div>
+      <div class="irow">
+        <div class="ilabel">目標月化收益率 %</div>
+        <input type="number" id="goal-monthly" value="1.5" step="0.1" onchange="updateGoals()">
+      </div>
+      <div class="irow">
+        <div class="ilabel">預計每月開倉數</div>
+        <input type="number" id="goal-trades" value="2" onchange="updateGoals()">
+      </div>
+      <hr>
+      <div id="goal-output"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">VRP篩選標的清單</div>
+    <div class="scroll-x">
+      <table class="tbl">
+        <thead>
+          <tr><th>標的</th><th>類型</th><th>IVR目標</th><th>適合策略</th><th>主要風險</th><th>$20K保證金</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="green">SPY</td><td>指數ETF</td><td>>50%</td><td>Iron Condor</td><td>系統性風險</td><td class="green">✓ $1,000/組</td></tr>
+          <tr><td class="green">QQQ</td><td>科技ETF</td><td>>50%</td><td>Iron Condor</td><td>科技泡沫</td><td class="green">✓ $1,000/組</td></tr>
+          <tr><td class="green">IWM</td><td>小盤ETF</td><td>>55%</td><td>Strangle</td><td>經濟衰退</td><td class="green">✓ 較低</td></tr>
+          <tr><td class="gold">PDD</td><td>中概股</td><td>>50%</td><td>Sell Put</td><td>關稅/監管</td><td class="green">✓ ~$9,000</td></tr>
+          <tr><td class="gold">BABA</td><td>中概股</td><td>>55%</td><td>Sell Put</td><td>政策風險</td><td class="green">✓ 較低</td></tr>
+          <tr><td class="gold">SOFI</td><td>金融科技</td><td>>50%</td><td>LEAP Call</td><td>利率敏感</td><td class="green">✓ LEAP便宜</td></tr>
+          <tr><td class="red">MSFT</td><td>科技巨頭</td><td>>60%</td><td>Bull Put Spread</td><td>HV>IV常見</td><td class="gold">△ $1,000/組</td></tr>
+          <tr><td class="red">AAPL</td><td>科技巨頭</td><td>>60%</td><td>Bull Put Spread</td><td>關稅/HV>IV</td><td class="gold">△ $1,000/組</td></tr>
+          <tr><td class="red">TSLA</td><td>高波動</td><td>>65%</td><td>謹慎Sell Put</td><td>極端波動</td><td class="red">✗ 止損頻繁</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="fn">顏色：綠=首選 · 金=可選 · 紅=謹慎。IVR目標需實時查詢，以實際數據為準。</div>
+  </div>
+</div>
+
+<!-- PAGE 6: 複盤記錄 -->
+<div class="page" id="p6">
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">新增交易記錄</div>
+      <div class="form-grid">
+        <div class="irow"><div class="ilabel">標的</div><input type="text" id="log-ticker" placeholder="PDD"></div>
+        <div class="irow"><div class="ilabel">策略</div>
+          <select id="log-strat"><option>Sell Put</option><option>Short Strangle</option><option>Iron Condor</option><option>Covered Call</option><option>LEAP Call</option></select>
+        </div>
+        <div class="irow"><div class="ilabel">入場日期</div><input type="text" id="log-entry" placeholder="2026/04/28"></div>
+        <div class="irow"><div class="ilabel">平倉日期</div><input type="text" id="log-exit" placeholder="2026/05/15"></div>
+        <div class="irow"><div class="ilabel">收取權利金</div><input type="number" id="log-prem" placeholder="120" step="1"></div>
+        <div class="irow"><div class="ilabel">平倉成本</div><input type="number" id="log-cost" placeholder="60" step="1"></div>
+        <div class="irow"><div class="ilabel">入場IVR</div><input type="number" id="log-ivr" placeholder="53"></div>
+        <div class="irow"><div class="ilabel">平倉原因</div>
+          <select id="log-reason">
+            <option>50%止盈</option><option>200%止損</option><option>DTE到期</option><option>GEX轉負</option><option>事件風險</option>
+          </select>
+        </div>
+      </div>
+      <div class="irow"><div class="ilabel">備注</div><input type="text" id="log-note" placeholder="市場狀況、判斷依據..."></div>
+      <button class="btn btn-green" onclick="addLog()" style="margin-top:8px;">記錄</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">績效統計</div>
+      <div id="perf-stats"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">交易記錄</div>
+    <div class="scroll-x">
+      <table class="tbl" id="log-table">
+        <thead>
+          <tr><th>標的</th><th>策略</th><th>入場</th><th>平倉</th><th>收入</th><th>成本</th><th>盈虧</th><th>原因</th><th>備注</th></tr>
+        </thead>
+        <tbody id="log-tbody">
+          <tr><td colspan="9" style="text-align:center;color:var(--t2);padding:20px;">暫無記錄</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- wrap -->
+
+<script>
+// ── Page navigation ──────────────────────────────────────
+function switchPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx={'p1':0,'p2':1,'p3':2,'p4':3,'p5':4,'p6':5}[id];
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if(id==='p2')calcStrategy();
+  if(id==='p4')updateRisk();
+  if(id==='p5')updateGoals();
+  if(id==='p6')renderLogs();
+}
+
+// ── Sync helpers ─────────────────────────────────────────
+function syncNum(rangeId, numId){
+  const v=document.getElementById(rangeId).value;
+  document.getElementById(numId).value=v;
+}
+function syncRange(numId, rangeId){
+  const v=document.getElementById(numId).value;
+  document.getElementById(rangeId).value=v;
+}
+
+// ── PAGE 1: Entry Screener ───────────────────────────────
+function updateEntry(){
+  const iv=+document.getElementById('ni-iv').value;
+  const hv=+document.getElementById('ni-hv').value;
+  const ivr=+document.getElementById('ni-ivr').value;
+  const ivp=+document.getElementById('ni-ivp').value;
+  const gex=+document.getElementById('ni-gex').value;
+  const vix=+document.getElementById('ni-vix').value;
+  const earn=+document.getElementById('ni-earn').value;
+  const dte=+document.getElementById('ni-dte').value;
+  const mp=+document.getElementById('ni-mp').value;
+
+  const gexLabel=gex>20?'正GEX':gex<-20?'負GEX':'接近中性';
+  const gexEl=document.getElementById('d-gex');
+  gexEl.textContent=gexLabel;
+  gexEl.className=gex>20?'green':gex<-20?'red':'gold';
+
+  const vrp=iv-hv;
+  const vrpPct=Math.min(Math.max((vrp+10)/30*100,0),100);
+  document.getElementById('vrp-fill').style.width=vrpPct+'%';
+  document.getElementById('vrp-fill').style.background=vrp>5?'var(--green)':vrp>0?'var(--gold)':'var(--red)';
+  document.getElementById('vrp-val').textContent=(vrp>=0?'+':'')+vrp.toFixed(1)+'%';
+  document.getElementById('vrp-val').className='vrp-label '+(vrp>5?'green':vrp>0?'gold':'red');
+
+  // Score items
+  const items=[
+    {label:'IV > HV（VRP存在）',pass:iv>hv,detail:`${iv}% vs ${hv}%，差值${(iv-hv).toFixed(1)}%`,required:true},
+    {label:'IVR > 50%',pass:ivr>50,detail:`IVR ${ivr}%，${ivr>50?'歷史高位':'偏低'}`,required:true},
+    {label:'正GEX環境',pass:gex>0,detail:gexLabel,required:true},
+    {label:'無30天內財報',pass:earn>30,detail:`距財報 ${earn} 天`,required:true},
+    {label:'DTE 21–45天',pass:dte>=21&&dte<=45,detail:`DTE ${dte} 天`,required:true},
+    {label:'VIX 15–35正常範圍',pass:vix>=15&&vix<=35,detail:`VIX ${vix}`,required:false},
+    {label:'IV百分位 > 50%',pass:ivp>50,detail:`百分位 ${ivp}%`,required:false},
+    {label:'Max Pain在行權價上方',pass:mp>5,detail:`Max Pain距行權價 ${mp>=0?'+':''}${mp}%`,required:false},
+  ];
+
+  const req=items.filter(i=>i.required);
+  const reqPass=req.filter(i=>i.pass).length;
+  const total=items.filter(i=>i.pass).length;
+
+  document.getElementById('score-grid').innerHTML=items.map(i=>`
+    <div class="mbox">
+      <div class="mk">${i.required?'必要':'加分'}</div>
+      <div class="mv" style="color:${i.pass?'var(--green)':'var(--red)'};font-size:0.92rem;">${i.label}</div>
+      <div class="ms">${i.detail}</div>
+    </div>`).join('');
+
+  const sig=document.getElementById('entry-signal');
+  const st=document.getElementById('sig-title');
+  const sd=document.getElementById('sig-desc');
+  if(reqPass===req.length){
+    sig.className='signal go';
+    st.textContent=`✓ 入場條件充足（${total}/${items.length}項通過）`;
+    sd.textContent='所有必要條件達標，具備正期望值。建議正常倉位入場，嚴守止損。';
+  } else if(reqPass>=3){
+    sig.className='signal warn';
+    st.textContent=`△ 條件部分不足（${reqPass}/${req.length}必要條件）`;
+    sd.textContent='必要條件未全部達標，建議縮小倉位或繼續等待。';
+  } else {
+    sig.className='signal no';
+    st.textContent=`✕ 不建議入場（${reqPass}/${req.length}必要條件）`;
+    sd.textContent='多項核心條件未達標，此時入場無統計優勢，等待更好時機。';
+  }
+}
+
+// ── PAGE 2: Strategy Calculator ──────────────────────────
+function normCDF(x){
+  const t=1/(1+0.2316419*Math.abs(x));
+  const p=t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+  const pdf=Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);
+  const r=1-pdf*p;
+  return x>=0?r:1-r;
+}
+
+function calcStrategy(){
+  const type=document.getElementById('strat-type').value;
+  const S=+document.getElementById('c-spot').value;
+  const Kp=+document.getElementById('c-kp').value;
+  const Kc=+document.getElementById('c-kc').value;
+  const pp=+document.getElementById('c-pp').value;
+  const cp=+document.getElementById('c-cp').value;
+  const bp=+document.getElementById('c-bp').value;
+  const bc=+document.getElementById('c-bc').value;
+  const dte=+document.getElementById('c-dte').value;
+  const margin=+document.getElementById('c-margin').value;
+
+  let netPrem,maxLoss,bepLow,bepHigh,annRet,metrics='';
+
+  if(type==='sellput'||type==='csp'){
+    netPrem=pp;maxLoss=(Kp-pp)*100;
+    bepLow=Kp-pp;bepHigh=null;
+    metrics=`
+      <div class="irow"><div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">策略類型</span><span>${type==='csp'?'Cash Secured Put':'裸賣Put'}</span></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">收取權利金</span><span class="green">$${(netPrem*100).toFixed(0)}/張</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">盈虧平衡點</span><span>$${bepLow.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">最大虧損</span><span class="red">$${maxLoss.toFixed(0)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">緩衝幅度</span><span>${((S-Kp)/S*100).toFixed(1)}%</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0"><span style="color:var(--t2)">年化收益率</span><span class="gold">${((netPrem*100/margin)*(365/dte)*100).toFixed(1)}%</span></div>`;
+  } else if(type==='strangle'){
+    netPrem=pp+cp;maxLoss=null;
+    bepLow=Kp-netPrem;bepHigh=Kc+netPrem;
+    metrics=`
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">總權利金</span><span class="green">$${(netPrem*100).toFixed(0)}/張</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">下方BEP</span><span>$${bepLow.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">上方BEP</span><span>$${bepHigh.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">安全區間寬度</span><span>${((Kc-Kp)/S*100).toFixed(1)}%</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">最大虧損</span><span class="red">理論無限</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0"><span style="color:var(--t2)">年化收益率</span><span class="gold">${((netPrem*100/margin)*(365/dte)*100).toFixed(1)}%</span></div>`;
+  } else if(type==='ironcondor'){
+    netPrem=(pp-bp)+(cp-bc);
+    const spreadWidth=Math.min(Kp-(Kp-10),(Kc+10)-Kc);
+    maxLoss=(10-netPrem)*100;
+    bepLow=Kp-netPrem;bepHigh=Kc+netPrem;
+    metrics=`
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">淨權利金收入</span><span class="green">$${(netPrem*100).toFixed(0)}/張</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">下方BEP</span><span>$${bepLow.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">上方BEP</span><span>$${bepHigh.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">最大虧損（有限）</span><span class="gold">$${maxLoss.toFixed(0)}/張</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0"><span style="color:var(--t2)">年化收益率</span><span class="gold">${((netPrem*100/maxLoss)*(365/dte)*100).toFixed(1)}%</span></div>`;
+  } else {
+    netPrem=cp;maxLoss=null;
+    bepHigh=S+netPrem;bepLow=null;
+    metrics=`
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">收取Call權利金</span><span class="green">$${(netPrem*100).toFixed(0)}/張</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">上方BEP</span><span>$${bepHigh.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">Call行權價</span><span>$${Kc}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0"><span style="color:var(--t2)">年化（對保證金）</span><span class="gold">${((netPrem*100/margin)*(365/dte)*100).toFixed(1)}%</span></div>`;
+  }
+
+  document.getElementById('strat-metrics').innerHTML=metrics;
+  drawPayoff(type,S,Kp,Kc,pp,cp,bp,bc,netPrem,bepLow,bepHigh);
+}
+
+function drawPayoff(type,S,Kp,Kc,pp,cp,bp,bc,netPrem,bepLow,bepHigh){
+  const canvas=document.getElementById('payoff-canvas');
+  const W=canvas.offsetWidth||600;
+  const H=180;
+  canvas.width=W*2;canvas.height=H*2;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(2,2);
+  ctx.clearRect(0,0,W,H);
+
+  const minP=S*0.6,maxP=S*1.4;
+  const px=x=>(x-minP)/(maxP-minP)*W;
+
+  const plFn=p=>{
+    if(type==='sellput'||type==='csp')return p>=Kp?pp:pp-(Kp-p);
+    if(type==='strangle'){const pPL=p>=Kp?pp:pp-(Kp-p);const cPL=p<=Kc?cp:cp-(p-Kc);return pPL+cPL;}
+    if(type==='ironcondor'){
+      const Kpl=Kp-10,Kcl=Kc+10;
+      let pPL=p>=Kp?(pp-bp):p>=Kpl?(pp-bp-(Kp-p)):-(10-(pp-bp));
+      let cPL=p<=Kc?(cp-bc):p<=Kcl?(cp-bc-(p-Kc)):-(10-(cp-bc));
+      return pPL+cPL;
+    }
+    if(type==='coveredcall')return p<=Kc?cp:cp-(p-Kc);
+    return 0;
+  };
+
+  const pts=[];
+  for(let i=0;i<=300;i++){
+    const p=minP+(maxP-minP)*i/300;
+    pts.push({p,pl:plFn(p)});
+  }
+  const maxPL=Math.max(...pts.map(pt=>pt.pl));
+  const minPL=Math.min(...pts.map(pt=>pt.pl));
+  const py=y=>H*0.82-(y-minPL)/(maxPL-minPL+0.001)*H*0.70+H*0.05;
+
+  // Zero line
+  ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1;ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(0,py(0));ctx.lineTo(W,py(0));ctx.stroke();
+
+  // Spot line
+  ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(px(S),0);ctx.lineTo(px(S),H);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Fill areas
+  pts.forEach((pt,i)=>{
+    if(i===0)return;
+    const prev=pts[i-1];
+    const x1=px(prev.p),x2=px(pt.p);
+    const y1=py(prev.pl),y2=py(pt.pl);
+    const y0=py(0);
+    ctx.beginPath();
+    ctx.moveTo(x1,y0);ctx.lineTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x2,y0);ctx.closePath();
+    ctx.fillStyle=pt.pl>=0?'rgba(13,158,115,0.10)':'rgba(224,62,78,0.10)';
+    ctx.fill();
+  });
+
+  // Payoff line
+  ctx.beginPath();ctx.lineWidth=2;
+  pts.forEach((pt,i)=>{
+    const x=px(pt.p),y=py(pt.pl);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    ctx.strokeStyle=pt.pl>=0?'#0d9e73':'#e03e4e';
+  });
+  ctx.stroke();
+
+  // Smooth redraw in segments
+  let lastSign=pts[0].pl>=0;
+  let seg=[];
+  pts.forEach((pt,i)=>{
+    const sign=pt.pl>=0;
+    if(sign!==lastSign||i===pts.length-1){
+      if(seg.length>1){
+        ctx.beginPath();ctx.strokeStyle=lastSign?'#0d9e73':'#e03e4e';ctx.lineWidth=2.5;
+        seg.forEach((s,j)=>j===0?ctx.moveTo(px(s.p),py(s.pl)):ctx.lineTo(px(s.p),py(s.pl)));
+        ctx.stroke();
+      }
+      seg=[pt];lastSign=sign;
+    } else seg.push(pt);
+  });
+
+  // Labels
+  ctx.fillStyle='rgba(26,115,200,0.9)';ctx.font='8px JetBrains Mono';ctx.textAlign='center';
+  ctx.fillText('$'+S.toFixed(0),px(S),12);
+  if(bepLow){ctx.fillStyle='rgba(13,158,115,0.9)';ctx.fillText('BEP $'+bepLow.toFixed(1),px(bepLow),py(0)-6);}
+  if(bepHigh){ctx.fillStyle='rgba(224,62,78,0.9)';ctx.fillText('BEP $'+bepHigh.toFixed(1),px(bepHigh),py(0)-6);}
+  ctx.fillStyle='rgba(196,124,0,0.9)';
+  ctx.fillText('Max $'+(netPrem*100).toFixed(0),px((Kp+Kc)/2||Kc),py(maxPL)-6);
+}
+
+// ── PAGE 3: Position Manager ─────────────────────────────
+let positions=[];
+function addPosition(){
+  const ticker=document.getElementById('pos-ticker').value.toUpperCase();
+  if(!ticker)return;
+  const pos={
+    id:Date.now(),
+    ticker,
+    strat:document.getElementById('pos-strat').value,
+    strike:document.getElementById('pos-strike').value,
+    expiry:document.getElementById('pos-expiry').value,
+    prem:+document.getElementById('pos-prem').value,
+    qty:+document.getElementById('pos-qty').value,
+    stop:+document.getElementById('pos-stop').value,
+    ivr:+document.getElementById('pos-ivr').value,
+    status:'safe'
+  };
+  positions.push(pos);
+  renderPositions();
+  document.getElementById('pos-ticker').value='';
+}
+
+function removePosition(id){
+  positions=positions.filter(p=>p.id!==id);
+  renderPositions();
+}
+
+function clearPositions(){positions=[];renderPositions();}
+
+function renderPositions(){
+  const tbody=document.getElementById('pos-tbody');
+  if(positions.length===0){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--t2);padding:20px;">暫無持倉</td></tr>';
+  } else {
+    tbody.innerHTML=positions.map(p=>`
+      <tr>
+        <td class="green" style="font-weight:600">${p.ticker}</td>
+        <td>${p.strat}</td>
+        <td>${p.strike}</td>
+        <td>${p.expiry}</td>
+        <td class="green">$${p.prem.toFixed(2)}</td>
+        <td>${p.qty}</td>
+        <td class="red">$${p.stop.toFixed(2)}</td>
+        <td><span class="status safe">持倉中</span></td>
+        <td><button class="btn btn-red" style="padding:3px 8px;font-size:0.55rem;" onclick="removePosition(${p.id})">平倉</button></td>
+      </tr>`).join('');
+  }
+  const total=positions.length;
+  const totalPrem=positions.reduce((s,p)=>s+p.prem*p.qty*100,0);
+  const theta=totalPrem/35;
+  const maxRisk=positions.reduce((s,p)=>s+p.stop*p.qty*100,0);
+  document.getElementById('pm-total').textContent=total;
+  document.getElementById('pm-prem').textContent='$'+totalPrem.toFixed(0);
+  document.getElementById('pm-theta').textContent='$'+theta.toFixed(0)+'/月';
+  document.getElementById('pm-risk').textContent='$'+maxRisk.toFixed(0);
+}
+
+// ── PAGE 4: Risk Control ─────────────────────────────────
+function updateRisk(){
+  const total=+document.getElementById('ni-total').value;
+  const used=+document.getElementById('ni-used').value;
+  const single=+document.getElementById('ni-single').value;
+  const mult=+document.getElementById('ni-mult').value;
+
+  // values already shown in number inputs — no separate spans needed
+
+  const usedAmt=total*used/100;
+  const freeAmt=total-usedAmt;
+  const maxPerTrade=total*single/100;
+  const stopLoss=maxPerTrade;
+  const maxTrades=Math.floor(freeAmt/maxPerTrade);
+
+  const usedColor=used>70?'var(--red)':used>50?'var(--gold)':'var(--green)';
+
+  document.getElementById('risk-dashboard').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">總資金</span><span>$${total.toLocaleString()}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">保證金使用</span><span style="color:${usedColor}">$${usedAmt.toLocaleString()} (${used}%)</span></div>
+    <div style="padding:4px 0 10px;border-bottom:1px solid var(--b1);">
+      <div class="prog-wrap"><div class="prog" style="width:${used}%;background:${usedColor}"></div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">可用資金</span><span class="green">$${freeAmt.toLocaleString()}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">單筆最大虧損</span><span class="red">$${maxPerTrade.toFixed(0)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">止損觸發倍數</span><span>${mult}× 收取額</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0"><span style="color:var(--t2)">最多同時持倉數</span><span class="gold">${maxTrades} 組</span></div>
+    <div style="margin-top:12px;padding:10px;background:${used>50?'rgba(255,95,109,0.05)':'rgba(45,212,160,0.05)'};border:1px solid ${used>50?'rgba(255,95,109,0.2)':'rgba(45,212,160,0.2)'};font-size:0.95rem;color:${used>50?'var(--red)':'var(--green)'};">
+      ${used>70?'⚠️ 保證金使用率過高，建議立即減倉':used>50?'△ 保證金使用率偏高，謹慎新增倉位':'✓ 保證金使用率健康，可以新增倉位'}
+    </div>`;
+}
+
+function toggleCk(el){el.classList.toggle('checked');}
+
+// ── PAGE 5: Goals ────────────────────────────────────────
+function updateGoals(){
+  const cap=+document.getElementById('goal-capital').value;
+  const monthly=+document.getElementById('goal-monthly').value;
+  const trades=+document.getElementById('goal-trades').value;
+
+  const monthlyAmt=cap*monthly/100;
+  const perTrade=monthlyAmt/trades;
+  const annual=monthlyAmt*12;
+  const annRate=annual/cap*100;
+
+  document.getElementById('goal-output').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">月度目標收入</span><span class="green">$${monthlyAmt.toFixed(0)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">每筆目標收入</span><span>$${perTrade.toFixed(0)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">年化目標收入</span><span class="gold">$${annual.toFixed(0)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">年化收益率</span><span class="gold">${annRate.toFixed(1)}%</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0"><span style="color:var(--t2)">扣除2次止損後</span><span>${((annual-cap*0.02*2)/cap*100).toFixed(1)}% 淨年化</span></div>
+    <hr>
+    <div style="font-size:0.95rem;color:var(--t2);line-height:1.8;">
+      現實評估：月化${monthly}%在${monthly<=1?'✓ 保守且可持續':monthly<=2?'✓ 合理目標':monthly<=3?'△ 偏進取，需要高IVR配合':'✗ 過於激進，風險過高'}
+    </div>`;
+}
+
+// ── PAGE 6: Trade Log ────────────────────────────────────
+let tradeLogs=[];
+function addLog(){
+  const ticker=document.getElementById('log-ticker').value.toUpperCase();
+  if(!ticker)return;
+  const prem=+document.getElementById('log-prem').value;
+  const cost=+document.getElementById('log-cost').value;
+  const log={
+    id:Date.now(),
+    ticker,
+    strat:document.getElementById('log-strat').value,
+    entry:document.getElementById('log-entry').value,
+    exit:document.getElementById('log-exit').value,
+    prem,cost,
+    pnl:prem-cost,
+    ivr:+document.getElementById('log-ivr').value,
+    reason:document.getElementById('log-reason').value,
+    note:document.getElementById('log-note').value
+  };
+  tradeLogs.push(log);
+  renderLogs();
+  document.getElementById('log-ticker').value='';
+  document.getElementById('log-note').value='';
+}
+
+function renderLogs(){
+  const tbody=document.getElementById('log-tbody');
+  if(tradeLogs.length===0){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--t2);padding:20px;">暫無記錄</td></tr>';
+  } else {
+    tbody.innerHTML=tradeLogs.map(l=>`
+      <tr>
+        <td class="green">${l.ticker}</td>
+        <td>${l.strat}</td>
+        <td>${l.entry}</td>
+        <td>${l.exit}</td>
+        <td class="green">$${l.prem}</td>
+        <td>${l.cost>0?'$'+l.cost:'—'}</td>
+        <td style="color:${l.pnl>=0?'var(--green)':'var(--red)'}">${l.pnl>=0?'+':''}$${l.pnl}</td>
+        <td style="font-size:0.95rem">${l.reason}</td>
+        <td style="font-size:0.95rem;color:var(--t2)">${l.note||'—'}</td>
+      </tr>`).join('');
+  }
+
+  // Stats
+  const wins=tradeLogs.filter(l=>l.pnl>0).length;
+  const total=tradeLogs.length;
+  const totalPnL=tradeLogs.reduce((s,l)=>s+l.pnl,0);
+  const avgWin=wins>0?tradeLogs.filter(l=>l.pnl>0).reduce((s,l)=>s+l.pnl,0)/wins:0;
+  const losses=tradeLogs.filter(l=>l.pnl<0).length;
+  const avgLoss=losses>0?Math.abs(tradeLogs.filter(l=>l.pnl<0).reduce((s,l)=>s+l.pnl,0)/losses):0;
+
+  document.getElementById('perf-stats').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">總交易次數</span><span>${total}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">勝率</span><span class="green">${total>0?(wins/total*100).toFixed(1):0}%</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">總盈虧</span><span style="color:${totalPnL>=0?'var(--green)':'var(--red)'}">${totalPnL>=0?'+':''}$${totalPnL}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">平均盈利</span><span class="green">$${avgWin.toFixed(0)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0;border-bottom:1px solid var(--b1)"><span style="color:var(--t2)">平均虧損</span><span class="red">-$${avgLoss.toFixed(0)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.90rem;padding:8px 0"><span style="color:var(--t2)">盈虧比</span><span class="gold">${avgLoss>0?(avgWin/avgLoss).toFixed(2):'-'}:1</span></div>
+    ${total>0?`<div style="margin-top:12px;padding:10px;background:rgba(45,212,160,0.05);border:1px solid rgba(45,212,160,0.1);font-size:0.95rem;">
+      ${wins/total>=0.7?'✓ 勝率優秀，策略執行良好':wins/total>=0.5?'△ 勝率尚可，繼續優化選股':' ✕ 勝率偏低，需要回顧入場條件'}
+    </div>`:''}`;
+}
+
+// Init — wait for DOM to be fully ready
+document.addEventListener('DOMContentLoaded', function(){
+  updateEntry();
+  // calcStrategy draws on canvas; defer slightly so layout is measured
+  setTimeout(()=>{ calcStrategy(); }, 50);
+  updateRisk();
+  updateGoals();
+  renderPositions();
+  renderLogs();
+});
+window.addEventListener('resize',()=>{
+  if(document.getElementById('p2').classList.contains('active')) calcStrategy();
+});
+</script>
+</body>
+</html>
